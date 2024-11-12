@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Navigation Game with Challenges and Points</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            background-color: #f3f3f3;
+        }
+
+        /* Challenge Buttons Container */
+        .challenge-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .challenge-buttons button {
+            padding: 10px 15px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #ffdd57;
+        }
+
+        /* Main Content Layout */
+        .main-content {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        /* Sidebar and Points Card */
+        .sidebar, .points-card {
+            width: 200px;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .sidebar h2, .points-card h2 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .sidebar ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .sidebar li {
+            margin-bottom: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+        }
+
+        /* Card Container */
+        .card-container {
+            width: 300px;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        .card img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .buttons button {
+            padding: 10px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .buttons button:hover {
+            background-color: #ddd;
+        }
+
+        .completed {
+            text-decoration: line-through;
+            color: grey;
+        }
+    </style>
+</head>
+<body>
+    <!-- Challenge Buttons -->
+    <div class="challenge-buttons">
+        <button onclick="completeSearching()">Searching</button>
+        <button onclick="completeSorting()">Sorting</button>
+        <button onclick="completeDeleting()">Deleting</button>
+        <button onclick="completeAdding()">Adding</button>
+        <button onclick="completeAction()">Perform Action</button>
+    </div>
+
+    <!-- Main Content Layout -->
+    <div class="main-content">
+        <!-- Sidebar for Challenges -->
+        <div class="sidebar">
+            <h2>Challenges</h2>
+            <ul id="challenges-list">
+                <li onclick="completeChallenge()">Find Room</li>
+                <li onclick="completeChallenge()">Add new</li>
+                <li onclick="completeChallenge()">Perform action</li>
+                <li onclick="completeChallenge()">Change next</li>
+                <li onclick="completeChallenge()">Change previous</li>
+                <li onclick="completeChallenge()">Change properties</li>
+            </ul>
+        </div>
+
+        <!-- Card Container -->
+        <div class="card-container">
+        <div class="card" id="card">
+            <img id="cardImage" src="" alt="Card Image">
+            <div id="cardText">Card Content</div>
+        </div>
+        <div class="buttons">
+            <button id="previousCard" style="display: none;">Previous Card</button>
+            <button id="nextCard" style="display: none;">Next Card</button>
+            <button id="clickHere">Click Here</button>
+            <button id="changeNextCard">Change Next Card</button>
+            <button id="changePreviousCard">Change Previous Card</button>
+        </div>
+        </div>
+        
+        
+
+        <!-- Points Card -->
+        <div class="points-card">
+            <h2>Player Points</h2>
+            <p id="points">0 Points</p>
+            <button onclick="spendPoints()">Spend Points on Upgrade</button>
+
+            <h2>Upgrades</h2>
+            <form>
+                <label>
+                  <input type="radio" name="room" value="singly" checked>
+                  Singly rooms
+                </label><br>
+                
+                <label onClick="buyDoubly()">
+                  <input type="radio" name="room" value="doubly" disabled>
+                  Doubly rooms (5 points)
+                </label><br>
+                
+                <label>
+                  <input type="radio" name="room" value="circular" disabled>
+                  Circular linked rooms (10 points)
+                </label><br>
+                
+                <label>
+                  <input type="radio" name="room" value="skip" disabled>
+                  Skip rooms (15 points)
+                </label><br>
+                
+                <label>
+                  <input type="radio" name="room" value="sparse" disabled>
+                  Sparse rooms (20 rooms)
+                </label>
+              </form>
+        </div>
+    </div>
+
+    <script>
+        function guidGenerator() {
+            var S4 = function() {
+                return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
+            };
+            return (S4()+S4()+"-"+S4()+"-"+S4()+"-"+S4()+"-"+S4()+S4()+S4());
+        }
+
+        class Node {
+            constructor(text, image, id) {
+                this.id = id ?? guidGenerator(); 
+                this.text = text;
+                this.image = image;
+                this.next = null;
+                this.prev = null;
+            }
+        }
+
+        class DoublyLinkedList {
+            constructor() {
+                this.head = null;
+                this.tail = null;
+            }
+
+            append(text, image) {
+                const newNode = new Node(text, image);
+                if (!this.head) {
+                    this.head = newNode;
+                    this.tail = newNode;
+                } else {
+                    this.tail.next = newNode;
+                    newNode.prev = this.tail;
+                    this.tail = newNode;
+                }
+            }
+
+            isSorted() {
+                let current = this.head;
+                while (current && current.next) {
+                    if (current.text > current.next.text) return false;
+                    current = current.next;
+                }
+                return true;
+            }
+
+            containsNode(nodeText) {
+                let current = this.head;
+                while (current) {
+                    if (current.text === nodeText) return true;
+                    current = current.next;
+                }
+                return false;
+            }
+        }
+
+        class Challenge {
+            constructor(type, message, check) {
+                this.type = type;
+                this.message = message;
+                this.check = check;
+                this.completed = false;
+            }
+        }
+
+        class ChallengeList {
+            constructor() {
+                this.challenges = [];
+            }
+
+            addChallenge(type, message, checkFunction) {
+                const newChallenge = new Challenge(type, message, checkFunction);
+                this.challenges.push(newChallenge);
+            }
+
+            completeChallenge(type, context) {
+                const challenge = this.challenges.find(challenge => challenge.type === type && !challenge.completed);
+                if (challenge && challenge.check(context)) {
+                    challenge.completed = true;
+                    points += 1;
+                    document.getElementById('points').textContent = `${points} Points`;
+                    alert(`Challenge completed! ${challenge.message}`);
+                    updateChallengesDisplay();
+                }
+            }
+
+            getIncompleteChallenges() {
+                return this.challenges.filter(challenge => !challenge.completed);
+            }
+        }
+
+        const challengesList = new ChallengeList();
+        
+        // Add challenges with appropriate check functions
+        challengesList.addChallenge("searching", "Searching challenge completed!", node => cardList.containsNode(node.text));
+        challengesList.addChallenge("sorting", "Sorting challenge completed!", list => list.isSorted());
+        challengesList.addChallenge("deleting", "Deleting challenge completed!", list => !list.containsNode("Card 3 Content"));
+        challengesList.addChallenge("adding", "Adding challenge completed!", () => true);
+        challengesList.addChallenge("perform", "Action performed!", () => true);
+
+        const cardList = new DoublyLinkedList();
+        cardList.append("Card 1 Content", "https://storage.icograms.com/templates/preview/sexual-health.png");
+        cardList.append("Card 2 Content", "https://storage.icograms.com/templates/preview/womens-health.png");
+        cardList.append("Card 3 Content", "https://storage.icograms.com/templates/preview/infectious-diseases.png");
+        cardList.append("Card 4 Content", "https://storage.icograms.com/templates/preview/Ophthalmology.png");
+        cardList.append("Card 5 Content", "https://storage.icograms.com/templates/preview/generators-substations.png");
+
+        let currentCard = cardList.head;
+        let points = 0;
+
+        function updateCardDisplay() {
+            const cardImage = document.getElementById('cardImage');
+            const cardText = document.getElementById('cardText');
+            cardImage.src = currentCard.image;
+            cardText.textContent = currentCard.text;
+
+            document.getElementById('nextCard').style.display = currentCard.next ? 'block' : 'none';
+            document.getElementById('previousCard').style.display = currentCard.prev ? 'block' : 'none';
+        }
+
+        function updateChallengesDisplay() {
+            const challengesListElement = document.getElementById('challenges-list');
+            challengesListElement.innerHTML = '';
+            challengesList.challenges.forEach(challenge => {
+                const challengeElement = document.createElement('li');
+                challengeElement.textContent = challenge.message;
+                challengeElement.classList.toggle('completed', challenge.completed);
+                challengesListElement.appendChild(challengeElement);
+            });
+        }
+
+        function completeSearching() {
+            challengesList.completeChallenge("searching", currentCard);
+        }
+
+        function completeSorting() {
+            challengesList.completeChallenge("sorting", cardList);
+        }
+
+        function completeDeleting() {
+            challengesList.completeChallenge("deleting", cardList);
+        }
+
+        function completeAdding() {
+            cardList.append("New Card Content", "https://via.placeholder.com/300x200?text=New+Image");
+            updateCardDisplay();
+            challengesList.completeChallenge("adding", null);
+        }
+
+        function completeAction() {
+            challengesList.completeChallenge("perform", currentCard);
+        }
+
+        function buyDoubly() {
+            document.getElementById("previousCard").style.display = "";
+        }
+
+        
+    document.getElementById('nextCard').addEventListener('click', () => {
+        if (currentCard.next) {
+            currentCard = currentCard.next;
+            updateCardDisplay();
+        }
+    });
+
+    document.getElementById('previousCard').addEventListener('click', () => {
+        if (currentCard.prev) {
+            currentCard = currentCard.prev;
+            updateCardDisplay();
+        }
+    });
+
+    document.getElementById('clickHere').addEventListener('click', () => {
+        alert("You clicked the 'Click Here' button on " + currentCard.text);
+    });
+
+    document.getElementById('changeNextCard').addEventListener('click', () => {
+        if (currentCard.next) {
+            const newText = prompt("Enter new text for the next card:");
+            const newImage = prompt("Enter new image URL for the next card:");
+            if (newText && newImage) {
+                currentCard.next.text = newText;
+                currentCard.next.image = newImage;
+                alert("Next card content updated!");
+            }
+        } else {
+            alert("No next card to update.");
+        }
+    });
+
+    document.getElementById('changePreviousCard').addEventListener('click', () => {
+        if (currentCard.prev) {
+            const newText = prompt("Enter new text for the previous card:");
+            const newImage = prompt("Enter new image URL for the previous card:");
+            if (newText && newImage) {
+                currentCard.prev.text = newText;
+                currentCard.prev.image = newImage;
+                alert("Previous card content updated!");
+            }
+        } else {
+            alert("No previous card to update.");
+        }
+    });
+
+
+        updateCardDisplay();
+        updateChallengesDisplay();
+    </script>
+</body>
+</html>
