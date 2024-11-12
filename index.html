@@ -244,6 +244,16 @@
                 }
                 return false;
             }
+
+            getRandomNode() {
+                let current = this.head;
+                const nodes = [];
+                while (current) {
+                    nodes.push(current);
+                    current = current.next;
+                }
+                return nodes[Math.floor(Math.random() * nodes.length)];
+            }
         }
 
         class Challenge {
@@ -282,7 +292,55 @@
         }
 
         const challengesList = new ChallengeList();
-        
+
+        function makeSearchChallengeFunction(nodeId) {
+            return (node) => node.id === nodeId;
+        }
+
+        function makeDeleteChallengeFunction(nodeId) {
+            return (linkedList) => !linkedList.contains(nodeId); 
+        }
+
+        function makeAddChallengeFunction(nodeId) {
+            return (linkedList) => linkedList.contains(nodeId);
+        }        
+
+        function generateRandomChallenge() {
+            const challengeTypes = ["searching", "sorting", "deleting", "adding", "perform"];
+            const randomType = challengeTypes[Math.floor(Math.random() * challengeTypes.length)];
+
+            let message, checkFunction;
+
+            switch (randomType) {
+                case "searching":
+                    // Create a search challenge for a random card in the list
+                    const randomCard = cardList.getRandomNode();
+                    message = `Find the card with text "${randomCard.text}"`;
+                    checkFunction = makeSearchChallengeFunction(randomCard.id);
+                    break;
+                case "sorting":
+                    message = "Ensure the card list is sorted alphabetically!";
+                    checkFunction = list => list.isSorted();
+                    break;
+                case "deleting":
+                    const deleteCard = cardList.getRandomNode();
+                    message = `Delete the card with text "${deleteCard.text}"`;
+                    checkFunction = list => !list.containsNode(deleteCard.text);
+                    break;
+                case "adding":
+                    message = "Add a new card to the list!";
+                    checkFunction = list => list.containsNode("New Card Content");
+                    break;
+                case "perform":
+                    message = "Perform an action on the current card!";
+                    checkFunction = () => true;  // This can be a generic action challenge
+                    break;
+            }
+
+            challengesList.addChallenge(randomType, message, checkFunction);
+            updateChallengesDisplay();
+        }
+
         // Add challenges with appropriate check functions
         challengesList.addChallenge("searching", "Searching challenge completed!", node => cardList.containsNode(node.text));
         challengesList.addChallenge("sorting", "Sorting challenge completed!", list => list.isSorted());
@@ -348,55 +406,56 @@
         }
 
         
-    document.getElementById('nextCard').addEventListener('click', () => {
-        if (currentCard.next) {
-            currentCard = currentCard.next;
-            updateCardDisplay();
-        }
-    });
-
-    document.getElementById('previousCard').addEventListener('click', () => {
-        if (currentCard.prev) {
-            currentCard = currentCard.prev;
-            updateCardDisplay();
-        }
-    });
-
-    document.getElementById('clickHere').addEventListener('click', () => {
-        alert("You clicked the 'Click Here' button on " + currentCard.text);
-    });
-
-    document.getElementById('changeNextCard').addEventListener('click', () => {
-        if (currentCard.next) {
-            const newText = prompt("Enter new text for the next card:");
-            const newImage = prompt("Enter new image URL for the next card:");
-            if (newText && newImage) {
-                currentCard.next.text = newText;
-                currentCard.next.image = newImage;
-                alert("Next card content updated!");
+        document.getElementById('nextCard').addEventListener('click', () => {
+            if (currentCard.next) {
+                currentCard = currentCard.next;
+                updateCardDisplay();
             }
-        } else {
-            alert("No next card to update.");
-        }
-    });
+        });
 
-    document.getElementById('changePreviousCard').addEventListener('click', () => {
-        if (currentCard.prev) {
-            const newText = prompt("Enter new text for the previous card:");
-            const newImage = prompt("Enter new image URL for the previous card:");
-            if (newText && newImage) {
-                currentCard.prev.text = newText;
-                currentCard.prev.image = newImage;
-                alert("Previous card content updated!");
+        document.getElementById('previousCard').addEventListener('click', () => {
+            if (currentCard.prev) {
+                currentCard = currentCard.prev;
+                updateCardDisplay();
             }
-        } else {
-            alert("No previous card to update.");
-        }
-    });
+        });
+
+        document.getElementById('clickHere').addEventListener('click', () => {
+            alert("You clicked the 'Click Here' button on " + currentCard.text);
+        });
+
+        document.getElementById('changeNextCard').addEventListener('click', () => {
+            if (currentCard.next) {
+                const newText = prompt("Enter new text for the next card:");
+                const newImage = prompt("Enter new image URL for the next card:");
+                if (newText && newImage) {
+                    currentCard.next.text = newText;
+                    currentCard.next.image = newImage;
+                    alert("Next card content updated!");
+                }
+            } else {
+                alert("No next card to update.");
+            }
+        });
+
+        document.getElementById('changePreviousCard').addEventListener('click', () => {
+            if (currentCard.prev) {
+                const newText = prompt("Enter new text for the previous card:");
+                const newImage = prompt("Enter new image URL for the previous card:");
+                if (newText && newImage) {
+                    currentCard.prev.text = newText;
+                    currentCard.prev.image = newImage;
+                    alert("Previous card content updated!");
+                }
+            } else {
+                alert("No previous card to update.");
+            }
+        });
 
 
         updateCardDisplay();
         updateChallengesDisplay();
+        generateRandomChallenge();
     </script>
 </body>
 </html>
