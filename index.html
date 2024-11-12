@@ -36,6 +36,10 @@
             cursor: pointer;
             background-color: #ffdd57;
         }
+        
+        .btn-delete {
+            background-color: #ff5757;
+        }
 
         /* Main Content Layout */
         .main-content {
@@ -116,11 +120,11 @@
 <body>
     <!-- Challenge Buttons -->
     <div class="challenge-buttons">
-        <button onclick="completeSearching()">Searching</button>
-        <button onclick="completeSorting()">Sorting</button>
-        <button onclick="completeDeleting()">Deleting</button>
-        <button onclick="completeAdding()">Adding</button>
-        <button onclick="completeAction()">Perform Action</button>
+        <button onclick="completeSearching()">Found Room</button>
+        <button onclick="completeSorting()">Sorted Rooms</button>
+        <button onclick="completeDeleting()">Deleted Room</button>
+        <button onclick="completeAdding()">Added Room</button>
+        <button onclick="completeAction()">Performed Action</button>
     </div>
 
     <!-- Main Content Layout -->
@@ -129,27 +133,21 @@
         <div class="sidebar">
             <h2>Challenges</h2>
             <ul id="challenges-list">
-                <li onclick="completeChallenge()">Find Room</li>
-                <li onclick="completeChallenge()">Add new</li>
-                <li onclick="completeChallenge()">Perform action</li>
-                <li onclick="completeChallenge()">Change next</li>
-                <li onclick="completeChallenge()">Change previous</li>
-                <li onclick="completeChallenge()">Change properties</li>
             </ul>
         </div>
 
         <!-- Card Container -->
         <div class="card-container">
         <div class="card" id="card">
-            <img id="cardImage" src="" alt="Card Image">
             <div id="cardText">Card Content</div>
+            <img id="cardImage" src="" alt="Card Image">
         </div>
         <div class="buttons">
-            <button id="previousCard" style="display: none;">Previous Card</button>
             <button id="nextCard" style="display: none;">Next Card</button>
-            <button id="clickHere">Click Here</button>
+            <button id="previousCard" style="display: none;">Previous Card</button>
             <button id="changeNextCard">Change Next Card</button>
             <button id="changePreviousCard">Change Previous Card</button>
+            <button id="deleteMe" class="btn-delete">Delete</button>
         </div>
         </div>
         
@@ -192,11 +190,9 @@
     </div>
 
     <script>
+        var roomCounter = 0;
         function guidGenerator() {
-            var S4 = function() {
-                return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
-            };
-            return (S4()+S4()+"-"+S4()+"-"+S4()+"-"+S4()+"-"+S4()+S4()+S4());
+            return roomCounter++;
         }
 
         class Node {
@@ -230,7 +226,7 @@
             isSorted() {
                 let current = this.head;
                 while (current && current.next) {
-                    if (current.text > current.next.text) return false;
+                    if (current.id > current.next.id) return false;
                     current = current.next;
                 }
                 return true;
@@ -254,6 +250,36 @@
                 }
                 return nodes[Math.floor(Math.random() * nodes.length)];
             }
+
+            delete(node) {
+                if (!node) return;
+
+                // Determine the new current card based on next or previous node
+                let newCurrentCard = node.next || node.prev;
+
+                // Update head if necessary
+                if (node === this.head) {
+                    this.head = node.next;
+                    if (this.head) {
+                        this.head.prev = null;
+                    } else {
+                        this.tail = null;  // List is now empty
+                    }
+                }
+                // Update tail if necessary
+                else if (node === this.tail) {
+                    this.tail = node.prev;
+                    this.tail.next = null;
+                }
+                // Update the pointers of neighboring nodes
+                else {
+                    node.prev.next = node.next;
+                    node.next.prev = node.prev;
+                }
+
+                return newCurrentCard;  // Return the new current card
+            }
+
         }
 
         class Challenge {
@@ -283,6 +309,10 @@
                     document.getElementById('points').textContent = `${points} Points`;
                     alert(`Challenge completed! ${challenge.message}`);
                     updateChallengesDisplay();
+                }
+                else {
+                    console.log(context);
+                    alert("No challenge completed!");
                 }
             }
 
@@ -342,11 +372,11 @@
         }
 
         // Add challenges with appropriate check functions
-        challengesList.addChallenge("searching", "Searching challenge completed!", node => cardList.containsNode(node.text));
-        challengesList.addChallenge("sorting", "Sorting challenge completed!", list => list.isSorted());
-        challengesList.addChallenge("deleting", "Deleting challenge completed!", list => !list.containsNode("Card 3 Content"));
-        challengesList.addChallenge("adding", "Adding challenge completed!", () => true);
-        challengesList.addChallenge("perform", "Action performed!", () => true);
+        // challengesList.addChallenge("searching", "Searching challenge completed!", node => cardList.containsNode(node.text));
+        // challengesList.addChallenge("sorting", "Sorting challenge completed!", list => list.isSorted());
+        // challengesList.addChallenge("deleting", "Deleting challenge completed!", list => !list.containsNode("Card 3 Content"));
+        // challengesList.addChallenge("adding", "Adding challenge completed!", () => true);
+        // challengesList.addChallenge("perform", "Action performed!", () => true);
 
         const cardList = new DoublyLinkedList();
         cardList.append("Card 1 Content", "https://storage.icograms.com/templates/preview/sexual-health.png");
@@ -420,9 +450,19 @@
             }
         });
 
-        document.getElementById('clickHere').addEventListener('click', () => {
-            alert("You clicked the 'Click Here' button on " + currentCard.text);
+        document.getElementById('deleteMe').addEventListener('click', () => {
+            const nodeToDelete = currentCard;
+            const newCurrentCard = cardList.delete(nodeToDelete);  // Delete node and get the new current card
+
+            if (newCurrentCard) {
+                currentCard = newCurrentCard;  // Update currentCard to the next or previous node
+                updateCardDisplay();  // Update the display with the new current card
+            } else {
+                alert("No cards left in the list.");
+                // Handle case where list becomes empty, if needed
+            }
         });
+
 
         document.getElementById('changeNextCard').addEventListener('click', () => {
             if (currentCard.next) {
@@ -455,6 +495,10 @@
 
         updateCardDisplay();
         updateChallengesDisplay();
+        generateRandomChallenge();
+        generateRandomChallenge();
+        generateRandomChallenge();
+        generateRandomChallenge();
         generateRandomChallenge();
     </script>
 </body>
